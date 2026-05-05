@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OMDb Movie Search</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>OMDb Movie Search</h1>
+      <p>Search for a movie and view its details instantly.</p>
+
+      <form id="searchForm" class="search-form">
+        <input
+          id="movieInput"
+          type="text"
+          placeholder="Example: Inception"
+          autocomplete="off"
+        />
+        <button type="submit">Search</button>
+      </form>
+    </section>
+
+    <section id="status" class="status"></section>
+
+    <section id="movieResult" class="movie-result"></section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
