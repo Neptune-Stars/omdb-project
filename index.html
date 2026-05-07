@@ -3,29 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMDb Movie Search</title>
+  <title>OMDb Movie Explorer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app">
     <section class="hero">
-      <h1>OMDb Movie Search</h1>
-      <p>Search for a movie and view its details instantly.</p>
+      <div class="hero-badge">OMDb API Movie Search</div>
+      <h1>Find movies, series, and episodes instantly.</h1>
+      <p>
+        Search the OMDb database, filter by year and type, and view clean movie details in a responsive SPA.
+      </p>
 
-      <form id="searchForm" class="search-form">
-        <input
-          id="movieInput"
-          type="text"
-          placeholder="Example: Inception"
-          autocomplete="off"
-        />
+      <form id="searchForm" class="search-panel">
+        <div class="input-group title-input">
+          <label for="movieInput">Movie title</label>
+          <input
+            id="movieInput"
+            type="text"
+            placeholder="Example: Inception"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="yearInput">Year</label>
+          <input
+            id="yearInput"
+            type="number"
+            placeholder="2010"
+            min="1900"
+            max="2030"
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="typeSelect">Type</label>
+          <select id="typeSelect">
+            <option value="">All</option>
+            <option value="movie">Movie</option>
+            <option value="series">Series</option>
+            <option value="episode">Episode</option>
+          </select>
+        </div>
+
         <button type="submit">Search</button>
       </form>
     </section>
 
+    <section class="toolbar">
+      <div>
+        <h2>Results</h2>
+        <p id="resultSummary">Search for a title to begin.</p>
+      </div>
+
+      <button id="clearButton" class="secondary-button" type="button">
+        Clear
+      </button>
+    </section>
+
     <section id="status" class="status"></section>
 
-    <section id="movieResult" class="movie-result"></section>
+    <section id="resultsGrid" class="results-grid"></section>
+
+    <section id="detailsPanel" class="details-panel"></section>
   </main>
 
   <script src="script.js"></script>
