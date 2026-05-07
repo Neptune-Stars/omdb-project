@@ -1,5 +1,13 @@
 ##Link for the live website: https://neptune-stars.github.io/omdb-project/
 
+## Backend Proxy - Samira Porduğan
+
+This project uses a backend proxy deployed on Vercel to call the OMDb API and return clean JSON to the frontend.
+
+- Proxy API: https://omdb-proxy-api.vercel.app
+- Search endpoint: `/api/search?title=Batman`
+- Movie detail endpoint: `/api/movie?id=tt1375666`
+
 # OMDB Movie Search Project
 
 ## How to Set Up Your Repository

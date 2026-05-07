@@ -1,5 +1,4 @@
-const API_KEY = "446ca591";
-const API_URL = "https://www.omdbapi.com/";
+const PROXY_API_URL = "https://omdb-proxy-api.vercel.app/api";
 
 const searchForm = document.getElementById("searchForm");
 const movieInput = document.getElementById("movieInput");
@@ -91,29 +90,27 @@ async function searchMovies({ title, year, type }) {
 
   try {
     const params = new URLSearchParams({
-      apikey: API_KEY,
-      s: title
+      title
     });
 
-    if (year) params.append("y", year);
+    if (year) params.append("year", year);
     if (type) params.append("type", type);
 
-    const data = await fetchJson(`${API_URL}?${params.toString()}`);
+    const data = await fetchJson(`${PROXY_API_URL}/search?${params.toString()}`);
 
-    if (data.Response === "False") {
+    if (!data.success) {
       resultSummary.textContent = "No matching results.";
-      showStatus(data.Error || "No movies found.", "error");
+      showStatus(data.error || "No movies found.", "error");
       return;
     }
 
     saveSearchState({ title, year, type });
-
-    renderResults(data.Search);
-    resultSummary.textContent = `${data.Search.length} result(s) shown. Click a card to view full details.`;
+    renderResults(data.results);
+    resultSummary.textContent = `${data.results.length} result(s) shown. Click a card to view full details.`;
     showStatus("Search completed.", "success");
 
-    if (data.Search.length > 0) {
-      showMovieDetails(data.Search[0].imdbID);
+    if (data.results.length > 0) {
+      showMovieDetails(data.results[0].id);
     }
   } catch (error) {
     resultSummary.textContent = "Search failed.";
@@ -125,18 +122,18 @@ function renderResults(movies) {
   resultsGrid.innerHTML = movies
     .map((movie) => {
       const poster =
-        movie.Poster && movie.Poster !== "N/A"
-          ? `<img class="poster" src="${movie.Poster}" alt="${movie.Title} poster" />`
+        movie.poster
+          ? `<img class="poster" src="${movie.poster}" alt="${escapeHtml(movie.title)} poster" />`
           : `<div class="poster-placeholder">No poster available</div>`;
 
       return `
-        <article class="result-card" onclick="showMovieDetails('${movie.imdbID}')">
+        <article class="result-card" onclick="showMovieDetails('${movie.id}')">
           ${poster}
           <div class="result-card-body">
-            <h3>${escapeHtml(movie.Title)}</h3>
+            <h3>${escapeHtml(movie.title)}</h3>
             <div class="result-meta">
-              <span>${escapeHtml(movie.Year)}</span>
-              <span>${escapeHtml(movie.Type)}</span>
+              <span>${escapeHtml(movie.year)}</span>
+              <span>${escapeHtml(movie.type)}</span>
             </div>
           </div>
         </article>
@@ -150,12 +147,6 @@ async function showMovieDetails(imdbID) {
 
   try {
     const movie = await getMovieDetails(imdbID);
-
-    if (movie.Response === "False") {
-      showStatus(movie.Error || "Could not load movie details.", "error");
-      return;
-    }
-
     renderMovieDetails(movie);
     showStatus("");
   } catch (error) {
@@ -169,15 +160,18 @@ async function getMovieDetails(imdbID) {
   }
 
   const params = new URLSearchParams({
-    apikey: API_KEY,
-    i: imdbID,
-    plot: "full"
+    id: imdbID
   });
 
-  const movie = await fetchJson(`${API_URL}?${params.toString()}`);
-  movieCache.set(imdbID, movie);
+  const data = await fetchJson(`${PROXY_API_URL}/movie?${params.toString()}`);
 
-  return movie;
+  if (!data.success) {
+    throw new Error(data.error || "Movie details could not be loaded.");
+  }
+
+  movieCache.set(imdbID, data.movie);
+
+  return data.movie;
 }
 
 async function fetchJson(url) {
@@ -192,8 +186,8 @@ async function fetchJson(url) {
 
 function renderMovieDetails(movie) {
   const poster =
-    movie.Poster && movie.Poster !== "N/A"
-      ? `<img class="movie-poster" src="${movie.Poster}" alt="${movie.Title} poster" />`
+    movie.poster
+      ? `<img class="movie-poster" src="${movie.poster}" alt="${escapeHtml(movie.title)} poster" />`
       : `<div class="poster-placeholder">No poster available</div>`;
 
   detailsPanel.innerHTML = `
@@ -201,29 +195,29 @@ function renderMovieDetails(movie) {
       ${poster}
 
       <div class="movie-info">
-        <h2>${escapeHtml(movie.Title)}</h2>
+        <h2>${escapeHtml(movie.title)}</h2>
         <p class="movie-subtitle">
-          ${escapeHtml(movie.Year || "N/A")} •
-          ${escapeHtml(movie.Runtime || "Runtime unknown")} •
-          ${escapeHtml(movie.Type || "N/A")}
+          ${escapeHtml(movie.year || "N/A")} •
+          ${escapeHtml(movie.runtime || "Runtime unknown")} •
+          ${escapeHtml(movie.type || "N/A")}
         </p>
 
         <div class="badges">
           <span class="badge">IMDb: ${escapeHtml(movie.imdbRating || "N/A")}</span>
-          <span class="badge">${escapeHtml(movie.Rated || "Not rated")}</span>
-          <span class="badge">${escapeHtml(movie.Language || "Language N/A")}</span>
+          <span class="badge">${escapeHtml(movie.rated || "Not rated")}</span>
+          <span class="badge">${escapeHtml(movie.language || "Language N/A")}</span>
         </div>
 
         <div class="details-list">
-          <p class="detail"><strong>Genre:</strong> ${escapeHtml(movie.Genre || "N/A")}</p>
-          <p class="detail"><strong>Director:</strong> ${escapeHtml(movie.Director || "N/A")}</p>
-          <p class="detail"><strong>Writer:</strong> ${escapeHtml(movie.Writer || "N/A")}</p>
-          <p class="detail"><strong>Actors:</strong> ${escapeHtml(movie.Actors || "N/A")}</p>
-          <p class="detail"><strong>Released:</strong> ${escapeHtml(movie.Released || "N/A")}</p>
-          <p class="detail"><strong>Awards:</strong> ${escapeHtml(movie.Awards || "N/A")}</p>
+          <p class="detail"><strong>Genre:</strong> ${escapeHtml(movie.genre || "N/A")}</p>
+          <p class="detail"><strong>Director:</strong> ${escapeHtml(movie.director || "N/A")}</p>
+          <p class="detail"><strong>Writer:</strong> ${escapeHtml(movie.writer || "N/A")}</p>
+          <p class="detail"><strong>Actors:</strong> ${escapeHtml(movie.actors || "N/A")}</p>
+          <p class="detail"><strong>Released:</strong> ${escapeHtml(movie.released || "N/A")}</p>
+          <p class="detail"><strong>Awards:</strong> ${escapeHtml(movie.awards || "N/A")}</p>
         </div>
 
-        <p class="plot">${escapeHtml(movie.Plot || "Plot not available.")}</p>
+        <p class="plot">${escapeHtml(movie.plot || "Plot not available.")}</p>
       </div>
     </article>
   `;
