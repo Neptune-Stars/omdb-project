@@ -30,8 +30,8 @@ searchForm.addEventListener("submit", function (event) {
 
   const searchState = getSearchState();
 
-  if (!searchState.title) {
-    showStatus("Please enter a movie title.", "error");
+  if (!searchState.title || searchState.title.length < 2) {
+    showStatus("Please enter at least 2 characters.", "error");
     return;
   }
 
