@@ -9,8 +9,21 @@ const resultsGrid = document.getElementById("resultsGrid");
 const detailsPanel = document.getElementById("detailsPanel");
 const resultSummary = document.getElementById("resultSummary");
 const clearButton = document.getElementById("clearButton");
+const loadMoreButton = document.getElementById("loadMoreButton");
 
 const movieCache = new Map();
+
+let currentSearchState = null;
+let currentPage = 1;
+let totalResults = 0;
+let loadedResults = 0;
+
+loadMoreButton.addEventListener("click", function () {
+  if (!currentSearchState) return;
+
+  currentPage += 1;
+  searchMovies(currentSearchState, true);
+});
 
 searchForm.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -32,6 +45,7 @@ clearButton.addEventListener("click", function () {
   resultsGrid.innerHTML = "";
   detailsPanel.innerHTML = "";
   resultSummary.textContent = "Search for a title to begin.";
+  loadMoreButton.classList.add("hidden");
   showStatus("");
 });
 
@@ -82,15 +96,22 @@ function loadSearchState() {
   }
 }
 
-async function searchMovies({ title, year, type }) {
-  showStatus("Searching movies...");
-  resultsGrid.innerHTML = "";
-  detailsPanel.innerHTML = "";
-  resultSummary.textContent = "Loading results...";
+async function searchMovies({ title, year, type }, append = false) {
+  showStatus(append ? "Loading more results..." : "Searching movies...");
+
+  if (!append) {
+    currentPage = 1;
+    currentSearchState = { title, year, type };
+    resultsGrid.innerHTML = "";
+    detailsPanel.innerHTML = "";
+    resultSummary.textContent = "Loading results...";
+    loadMoreButton.classList.add("hidden");
+  }
 
   try {
     const params = new URLSearchParams({
-      title
+      title,
+      page: currentPage
     });
 
     if (year) params.append("year", year);
@@ -99,27 +120,43 @@ async function searchMovies({ title, year, type }) {
     const data = await fetchJson(`${PROXY_API_URL}/search?${params.toString()}`);
 
     if (!data.success) {
-      resultSummary.textContent = "No matching results.";
+      if (!append) {
+        resultSummary.textContent = "No matching results.";
+      }
+
       showStatus(data.error || "No movies found.", "error");
+      loadMoreButton.classList.add("hidden");
       return;
     }
 
     saveSearchState({ title, year, type });
-    renderResults(data.results);
-    resultSummary.textContent = `${data.results.length} result(s) shown. Click a card to view full details.`;
+
+    renderResults(data.results, append);
+
+    totalResults = data.totalResults;
+    loadedResults = resultsGrid.children.length;
+
+    resultSummary.textContent = `${loadedResults} of ${totalResults} result(s) shown. Click a card to view full details.`;
+
+    if (loadedResults < totalResults) {
+      loadMoreButton.classList.remove("hidden");
+    } else {
+      loadMoreButton.classList.add("hidden");
+    }
+
     showStatus("Search completed.", "success");
 
-    if (data.results.length > 0) {
+    if (!append && data.results.length > 0) {
       showMovieDetails(data.results[0].id);
     }
   } catch (error) {
-    resultSummary.textContent = "Search failed.";
+    resultSummary.textContent = append ? resultSummary.textContent : "Search failed.";
     showStatus("Something went wrong while searching. Please try again.", "error");
   }
 }
 
-function renderResults(movies) {
-  resultsGrid.innerHTML = movies
+function renderResults(movies, append = false) {
+  const html = movies
     .map((movie) => {
       const poster =
         movie.poster
@@ -140,6 +177,12 @@ function renderResults(movies) {
       `;
     })
     .join("");
+
+  if (append) {
+    resultsGrid.insertAdjacentHTML("beforeend", html);
+  } else {
+    resultsGrid.innerHTML = html;
+  }
 }
 
 async function showMovieDetails(imdbID) {
